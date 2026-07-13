@@ -13,6 +13,19 @@ const port = process.env.PORT || 3000;
 // 🚨 GÜVENLİK YAMASI 2: Proxy Güveni (Dükkanı açarken tabelayı asıyoruz)
 app.set('trust proxy', 1);
 
+// Sanal bekçinin (UptimeRobot) sistemi uyanık tutması için
+app.get('/api/ping', async (req, res) => {
+    try {
+        // Veritabanına çok hafif bir 'Uyanık mısın?' sorgusu atıyoruz
+        // Not: db.query kısmını kendi veritabanı değişken ismine göre uyarla
+        await db.query('SELECT 1'); 
+        res.status(200).send('Motor ve Veritabanı 7/24 Ayakta! 🚀');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Veritabanı uykuda veya hatalı.');
+    }
+});
+
 // 🚨 GÜVENLİK YAMASI 3: CORS Kısıtlaması (Şu an '*', Vercel'e yükleyince buraya kendi site linkini yazacaksın)
 const corsAyarlari = {
     origin: '*', 
