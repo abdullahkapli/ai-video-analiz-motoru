@@ -232,13 +232,18 @@
         yukleniyor.style.display = 'block';
 
         try {
-            const response = await fetch("https://ai-video-analiz-motoru.onrender.com//api/ozetle", {
+            const response = await fetch("https://ai-video-analiz-motoru.onrender.com/api/ozetle", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ videoLink: link, mod: modlar, ceviri: ceviriKutusu }) 
-            });
+            })
+            .then(cevap => cevap.json())
+            .then(veri => {
+                console.log("Sunucudan gelen cevap:", veri);
+            })
+            .catch(hata => console.error("Hata oluştu:", hata));
 
             const data = await response.json();
 
