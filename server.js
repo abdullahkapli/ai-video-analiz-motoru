@@ -7,17 +7,36 @@ const mysql = require('mysql2/promise');
 
 const app = express();
 
-// 🚨 GÜVENLİK YAMASI 1: Dinamik Port (Render gibi bulut sistemleri kendi portunu atar, yoksa 3000 kullanır)
+// 🚨 GÜVENLİK YAMASI 1: Dinamik Port
 const port = process.env.PORT || 3000;
 
-// 🚨 GÜVENLİK YAMASI 2: Proxy Güveni (Dükkanı açarken tabelayı asıyoruz)
+// --- 1. SIRA: GÜVENLİK VE ORTAK AYARLAR (MIDDLEWARE) ---
 app.set('trust proxy', 1);
+app.use(cors({ origin: '*' })); 
+app.use(express.json());
+
+// --- 2. SIRA: VERİTABANI BAĞLANTISI ---
+const db = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT
+});
+
+db.getConnection()
+    .then(() => console.log("📦 MySQL Veritabanına başarıyla bağlanıldı!"))
+    .catch((hata) => console.error("❌ Veritabanı bağlantı hatası:", hata));
+
+// --- 3. SIRA: YAPAY ZEKA BAĞLANTISI ---
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+// --- 4. SIRA: ROTALAR (API UÇ NOKTALARI) ---
 
 // Sanal bekçinin (UptimeRobot) sistemi uyanık tutması için
 app.get('/api/ping', async (req, res) => {
     try {
-        // Veritabanına çok hafif bir 'Uyanık mısın?' sorgusu atıyoruz
-        // Not: db.query kısmını kendi veritabanı değişken ismine göre uyarla
         await db.query('SELECT 1'); 
         res.status(200).send('Motor ve Veritabanı 7/24 Ayakta! 🚀');
     } catch (error) {
@@ -26,46 +45,16 @@ app.get('/api/ping', async (req, res) => {
     }
 });
 
-// 🚨 GÜVENLİK YAMASI 3: CORS Kısıtlaması (Şu an '*', Vercel'e yükleyince buraya kendi site linkini yazacaksın)
-const corsAyarlari = {
-    origin: '*', 
-};
-app.use(cors(corsAyarlari)); 
-app.use(express.json()); 
-
-// MySQL Veritabanı Bağlantı Havuzu
-// MySQL Veritabanı Bağlantı Havuzu
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT // 
-});
-
-// Bağlantıyı test et
-db.getConnection()
-    .then(() => console.log("📦 MySQL Veritabanına başarıyla bağlanıldı!"))
-    .catch((hata) => console.error("❌ Veritabanı bağlantı hatası:", hata));
-
-// Gemini Başlatma
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-
 // Asıl İşlemi Yapan API Uç Noktası
 app.post('/api/ozetle', async (req, res) => {
     const link = req.body.videoLink;
     const modlar = req.body.mod;
-    const ceviri = req.body.ceviri
+    const ceviri = req.body.ceviri;
 
-    // 🚨 GÜVENLİK YAMASI 4: Linkin gerçekten bir YouTube linki olup olmadığını kontrol et
     if (!link || (!link.includes('youtube.com') && !link.includes('youtu.be'))) {
         return res.status(400).json({ basari: false, mesaj: "Lütfen geçerli bir YouTube URL'si yapıştırın." });
     }
 
-    // --- 1. AŞAMA: GÜVENLİK VE LİMİT KONTROLÜ ---
-    // Yukarıda trust proxy ayarladığımız için req.ip artık bize gerçek IP'yi verecek
     const musteriIp = req.ip || req.socket.remoteAddress;
 
     try {
@@ -79,17 +68,11 @@ app.post('/api/ozetle', async (req, res) => {
             return res.status(429).json({ basari: false, mesaj: "Günlük ücretsiz 3 kullanım limitinizi doldurdunuz. Lütfen yarın tekrar gelin." });
         }
 
-        // --- 2. AŞAMA: ASIL İŞLEM (YAPAY ZEKA) ---
         console.log(`✅ İşlem izni verildi. IP: ${musteriIp} | Link: ${link}`);
-        console.log("1. YouTube'dan alt yazılar çekiliyor...");
         const transcriptDizisi = await YoutubeTranscript.fetchTranscript(link);
-        
-        console.log("2. Metinler birleştiriliyor...");
         const duzMetin = transcriptDizisi.map(item => item.text).join(' ');
         
-        console.log("3. Yapay zekaya gönderiliyor...");
         let prompt = "";
-
         if (modlar === "tldr") {
             prompt = "Bu videonun detaylarına girmeden, anlatılmak istenen asıl mesajı en fazla 2 veya 3 cümleyle, çok net bir şekilde özetle. Metin: " + duzMetin;
         } else if (modlar === "adim_adim") {
@@ -110,7 +93,6 @@ app.post('/api/ozetle', async (req, res) => {
 
         const istek = await model.generateContent(prompt); 
         
-        // --- 3. AŞAMA: DEFTERE YAZ (LİMİTİ GÜNCELLE) ---
         if (satirlar.length > 0) {
             await db.query("UPDATE kullanici_limitleri SET kullanim_sayisi = kullanim_sayisi + 1 WHERE ip_adresi = ? AND son_kullanim_tarihi = CURDATE()", [musteriIp]);
         } else {
