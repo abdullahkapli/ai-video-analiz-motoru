@@ -68,8 +68,21 @@ app.post('/api/ozetle', async (req, res) => {
             return res.status(429).json({ basari: false, mesaj: "Günlük ücretsiz 3 kullanım limitinizi doldurdunuz. Lütfen yarın tekrar gelin." });
         }
 
-        console.log(`✅ İşlem izni verildi. IP: ${musteriIp} | Link: ${link}`);
-        const transcriptDizisi = await YoutubeTranscript.fetchTranscript(link);
+        console.log("1. YouTube linki temizleniyor...");
+        
+        // --- VİDEO ID ÇIKARICI FİLTRE ---
+        let videoId = link;
+        if (link.includes("youtu.be/")) {
+            videoId = link.split("youtu.be/")[1].split("?")[0];
+        } else if (link.includes("watch?v=")) {
+            videoId = link.split("v=")[1].split("&")[0];
+        } else if (link.includes("shorts/")) {
+            videoId = link.split("shorts/")[1].split("?")[0];
+        }
+
+        console.log(`2. Temiz ID bulundu: ${videoId} | Alt yazılar çekiliyor...`);
+        // Kütüphaneye karmaşık linki değil, sadece saf ID'yi veriyoruz
+        const transcriptDizisi = await YoutubeTranscript.fetchTranscript(videoId);
         const duzMetin = transcriptDizisi.map(item => item.text).join(' ');
         
         let prompt = "";
