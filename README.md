@@ -4,7 +4,6 @@ Bu proje, YouTube videolarının alt yazılarını asenkron olarak çekip, Googl
 
 Kullanıcıların sistemi kötüye kullanımını engellemek amacıyla **Aiven Bulut MySQL** üzerinde çalışan IP tabanlı bir Rate-Limiting (İstek Sınırlandırma) mimarisi kurgulanmıştır.
 
-*(Buraya çektiğin kısa videoyu veya GIF'i ekleyebilirsin)*
 
 ## 🛠️ Kullanılan Teknolojiler
 
