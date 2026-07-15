@@ -34,4 +34,4 @@ Projeyi kendi bilgisayarınızda denemek için:
 
 1. Repoyu klonlayın:
    ```bash
-   git clone [https://github.com/KULLANICI_ADIN/ai-video-analiz-motoru.git](https://github.com/KULLANICI_ADIN/ai-video-analiz-motoru.git)
+   git clone(https://github.com/abdullahkapli/ai-video-analiz-motoru.git)
