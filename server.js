@@ -7,15 +7,15 @@ const mysql = require('mysql2/promise');
 
 const app = express();
 
-// 🚨 GÜVENLİK YAMASI 1: Dinamik Port
+
 const port = process.env.PORT || 3000;
 
-// --- 1. SIRA: GÜVENLİK VE ORTAK AYARLAR (MIDDLEWARE) ---
+// ---GÜVENLİK VE ORTAK AYARLAR---
 app.set('trust proxy', 1);
 app.use(cors({ origin: '*' })); 
 app.use(express.json());
 
-// --- 2. SIRA: VERİTABANI BAĞLANTISI ---
+// ---  VERİTABANI BAĞLANTISI ---
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -28,22 +28,11 @@ db.getConnection()
     .then(() => console.log("📦 MySQL Veritabanına başarıyla bağlanıldı!"))
     .catch((hata) => console.error("❌ Veritabanı bağlantı hatası:", hata));
 
-// --- 3. SIRA: YAPAY ZEKA BAĞLANTISI ---
+// ---  YAPAY ZEKA BAĞLANTISI ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-// --- 4. SIRA: ROTALAR (API UÇ NOKTALARI) ---
-
-// Sanal bekçinin (UptimeRobot) sistemi uyanık tutması için
-app.get('/api/ping', async (req, res) => {
-    try {
-        await db.query('SELECT 1'); 
-        res.status(200).send('Motor ve Veritabanı 7/24 Ayakta! 🚀');
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Veritabanı uykuda veya hatalı.');
-    }
-});
+// ---  ROTALAR (API UÇ NOKTALARI) ---
 
 // Asıl İşlemi Yapan API Uç Noktası
 app.post('/api/ozetle', async (req, res) => {
@@ -81,7 +70,7 @@ app.post('/api/ozetle', async (req, res) => {
         }
 
         console.log(`2. Temiz ID bulundu: ${videoId} | Alt yazılar çekiliyor...`);
-        // Kütüphaneye karmaşık linki değil, sadece saf ID'yi veriyoruz
+        
         const transcriptDizisi = await YoutubeTranscript.fetchTranscript(videoId);
         const duzMetin = transcriptDizisi.map(item => item.text).join(' ');
         
@@ -100,7 +89,7 @@ app.post('/api/ozetle', async (req, res) => {
             prompt = "Aşağıdaki video metnini kullanarak bana 3 maddelik bir özet çıkar: " + duzMetin;
         }
 
-        if(ceviri == true){
+        if(ceviri === true || ceviri === "true"){
             prompt += " ÖNEMLİ NOT: Orijinal video hangi dilde olursa olsun, bu sonucu KESİNLİKLE akıcı bir Türkçe ile hazırla.";
         }
 
