@@ -1,4 +1,4 @@
-# 🚀 AI Destekli YouTube Video Analiz ve Özetleme Motoru
+# 🚀 AI Destekli YouTube Video Analiz ve Özetleme Motoru BriefTube AI
 
 Bu proje, YouTube videolarının alt yazılarını asenkron olarak çekip, Google Gemini AI kullanarak kullanıcılara saniyeler içinde anlamlı özetler sunan Full-Stack bir web uygulamasıdır. 
 
